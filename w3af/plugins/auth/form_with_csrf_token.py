@@ -32,7 +32,7 @@ from w3af.core.data.options.option_list import OptionList
 from w3af.core.data.url.handlers.redirect import GET_HEAD_CODES
 
 
-class detailed(AuthPlugin):
+class form_with_csrf_token(AuthPlugin):
     """
     Detailed authentication plugin.
     """
@@ -65,6 +65,7 @@ class detailed(AuthPlugin):
                                                             self.password)
         om.out.debug(msg)
 
+        self.csrf_token = self._get_csrf_token()
         data = self._get_data_from_format()
 
         try:
@@ -116,6 +117,11 @@ class detailed(AuthPlugin):
                 self._login_error = False
             return False
 
+    def _get_csrf_token(self):
+        response = self._uri_opener.GET(self.auth_url)
+        soup = bs(response.body, "lxml")
+        return soup.find("input", id=self.csrf_token_field, type="hidden").get("value")
+
     def _get_data_from_format(self):
         """
         :return: A string with all the information to send to the login URL.
@@ -130,6 +136,8 @@ class detailed(AuthPlugin):
         result = result.replace('%U', trans(self.username))
         result = result.replace('%p', trans(self.password_field))
         result = result.replace('%P', trans(self.password))
+        result = result.replace('%c', trans(self.csrf_token_field))
+        result = result.replace('%C', trans(self.csrf_token))
 
         return result
 
@@ -178,6 +186,10 @@ class detailed(AuthPlugin):
              self.password_field,
              'string', 'Password parameter name (ie. "pwd" if the HTML looks'
                        ' like <input type="password" name="pwd">...)'),
+
+            ('csrf_token_field',
+             self.csrf_token_field,
+             'string', 'csrf_token parameter name'),
 
             ('auth_url',
              self.auth_url,
@@ -243,6 +255,7 @@ class detailed(AuthPlugin):
         self.password = options_list['password'].get_value()
         self.username_field = options_list['username_field'].get_value()
         self.password_field = options_list['password_field'].get_value()
+        self.csrf_token_field = options_list['csrf_token_field'].get_value()
         self.data_format = options_list['data_format'].get_value()
         self.check_string = options_list['check_string'].get_value()
         self.method = options_list['method'].get_value()
@@ -270,6 +283,7 @@ class detailed(AuthPlugin):
             - password
             - username_field
             - password_field
+            - csrf_token_field
             - data_format
             - auth_url
             - method
