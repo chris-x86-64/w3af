@@ -120,7 +120,7 @@ class form_with_csrf_token(AuthPlugin):
     def _get_csrf_token(self):
         response = self._uri_opener.GET(self.auth_url)
         soup = bs(response.body, "lxml")
-        return soup.find("input", id=self.csrf_token_field, type="hidden").get("value")
+        return soup.find("input", attrs={"name": self.csrf_token_field}, type="hidden").get("value")
 
     def _get_data_from_format(self):
         """
